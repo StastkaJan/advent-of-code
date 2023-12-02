@@ -1012,11 +1012,13 @@ fourknflljrbrq63five
 39njjvzt7threetkccstz</pre>
 
   <script>
+    let data = document.querySelector('pre').innerHTML.split('\n')
+
     function partOne() {
       let sum = 0
-      document.querySelector('pre').innerHTML.split('\n').forEach((item, i) => {
-        let firstNum = item.match(/([0-9])/)[0]
-        let lastNum = item.split('').reverse().join('').match(/([0-9])/)[0]
+      data.forEach((line, i) => {
+        let firstNum = line.match(/([0-9])/)[0]
+        let lastNum = line.split('').reverse().join('').match(/([0-9])/)[0]
         sum += Number(String(firstNum) + String(lastNum))
       })
 
@@ -1038,11 +1040,13 @@ fourknflljrbrq63five
         nine: 9
       }
 
-      document.querySelector('pre').innerHTML.split('\n').forEach((item, i) => {
-        let firstNum = item.match(/([0-9])|(one)|(two)|(three)|(four)|(five)|(six)|(seven)|(eight)|(nine)/)[0]
+      data.forEach((line, i) => {
+        let firstNum = line.match(/([0-9])|(one)|(two)|(three)|(four)|(five)|(six)|(seven)|(eight)|(nine)/)[0]
         firstNum = Number(firstNum) ? firstNum : numbers[firstNum]
-        let lastNum = item.split('').reverse().join('').match(/([0-9])|(eno)|(owt)|(eerht)|(ruof)|(evif)|(xis)|(neves)|(thgie)|(enin)/)[0].split('').reverse().join('')
+
+        let lastNum = line.split('').reverse().join('').match(/([0-9])|(eno)|(owt)|(eerht)|(ruof)|(evif)|(xis)|(neves)|(thgie)|(enin)/)[0].split('').reverse().join('')
         lastNum = Number(lastNum) ? lastNum : numbers[lastNum]
+
         sum += Number(String(firstNum) + String(lastNum))
       })
 

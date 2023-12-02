@@ -112,25 +112,27 @@ Game 99: 3 green, 8 red, 7 blue; 6 red, 13 blue; 12 red, 4 green, 4 blue; 12 red
 Game 100: 2 red, 13 blue, 1 green; 1 green, 12 blue; 1 red, 5 blue, 1 green; 3 blue, 3 red</pre>
 
   <script>
+    let data = document.querySelector('pre').innerHTML.split('\n')
+
     function partOne() {
       let sum = 0
-      document.querySelector('pre').innerHTML.split('\n').forEach((line, count) => {
+      data.forEach((line, count) => {
         let games = line.split(/:|;/)
-        console.log(games)
         let minCubes = {
           red: 0,
           green: 0,
           blue: 0
         }
+
         for (let i = 1; i < games.length; i++) {
           game = games[i].split(',')
+
           for (let j = 0; j < game.length; j++) {
             let match = game[j].match(/(\d+) (\w+)/)
             let minNow = minCubes[match[2]]
             minNow < match[1] && (minCubes[match[2]] = Number(match[1]))
           }
         }
-        console.log(minCubes)
         sum += Number(minCubes.red * minCubes.green * minCubes.blue)
       })
 
@@ -146,11 +148,13 @@ Game 100: 2 red, 13 blue, 1 green; 1 green, 12 blue; 1 red, 5 blue, 1 green; 3 b
         blue: 14
       }
 
-      document.querySelector('pre').innerHTML.split('\n').forEach((line, count) => {
+      data.forEach((line, count) => {
         let games = line.split(/:|;/)
         let gameID = games[0].match(/(\d+)/)[0]
+
         for (let i = 1; i < games.length; i++) {
           game = games[i].split(',')
+
           for (let j = 0; j < game.length; j++) {
             let match = game[j].match(/(\d+) (\w+)/)
             if (sack[match[2]] < match[1]) return
