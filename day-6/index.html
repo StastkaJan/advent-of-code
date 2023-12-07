@@ -17,6 +17,7 @@ Distance:   334   1135   1350   2430</pre>
     let data = document.querySelector('pre').innerText.split('\n')
 
     function partOne() {
+      let t1 = performance.now()
       let sum = 1
       const times = data[0].match(/\d+/g),
         distances = data[1].match(/\d+/g)
@@ -38,11 +39,13 @@ Distance:   334   1135   1350   2430</pre>
         sum *= completeCount + (halfTime - j) * 2
       })
 
+      console.log('Time for solution one is ' + (performance.now() - t1).toFixed(2) + ' ms')
       console.log('Solution for part two is ' + sum + '!')
     }
     partOne()
 
     function partTwo() {
+      let t1 = performance.now()
       const time = data[0].replace(/\s+/g, '').match(/\d+/g),
         distance = data[1].replace(/\s+/g, '').match(/\d+/g),
         halfTime = Math.ceil(time / 2)
@@ -60,6 +63,7 @@ Distance:   334   1135   1350   2430</pre>
 
       sum = completeCount + (halfTime - j) * 2
 
+      console.log('Time for solution two is ' + (performance.now() - t1).toFixed(2) + ' ms')
       console.log('Solution for part two is ' + sum + '!')
     }
     partTwo()
