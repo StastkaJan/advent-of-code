@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+
+  <title>Day 10 - Advent of code</title>
+</head>
+
+<body>
+  <pre style="word-wrap: break-word; white-space: pre-wrap;">FF7FSF7F7F7F7F7F---7
+L|LJ||||||||||||F--J
+FL-7LJLJ||||||LJL-77
+F--JF--7||LJLJ7F7FJ-
+L---JF-JLJ.||-FJLJJ7
+|F|F-JF---7F7-L7L|7|
+|FFJF7L7F-JF7|JL---7
+7-L-JL7||F7|L7F-7F7|
+L.L7LFJ|||||FJL7||LJ
+L7JLJL-JLJLJL--JLJ.L</pre>
+
+  <script>
+    let data = document.querySelector('pre').innerText.split('\n')
+
+    function partOne() {
+      let t1 = performance.now(),
+        sum = 0,
+        startingPoint = [],
+        tracking = new Array(data.length)
+
+      const checkTile = (position, count) => {
+        let stack = [[...position, count]]
+
+        while (stack.length > 0) {
+          let [x, y, count] = stack.pop()
+
+          if (
+            count > tracking[x][y]
+            || '.S'.includes(data[x][y])) {
+            continue
+          }
+
+          tracking[x][y] = ++count
+
+          switch (data[x][y]) {
+            case 'F':
+              stack.push([x + 1, y, count], [x, y + 1, count]);
+              break
+            case 'L':
+              stack.push([x - 1, y, count], [x, y + 1, count]);
+              break
+            case 'J':
+              stack.push([x - 1, y, count], [x, y - 1, count]);
+              break
+            case '7':
+              stack.push([x + 1, y, count], [x, y - 1, count]);
+              break
+            case '|':
+              stack.push([x - 1, y, count], [x + 1, y, count]);
+              break
+            case '-':
+              stack.push([x, y + 1, count], [x, y - 1, count]);
+              break
+            default:
+              break
+          }
+        }
+      }
+
+      data.forEach((item, i) => {
+        let match = item.match('S')
+
+        tracking[i] = new Array(item.length)
+
+        if (match) {
+          tracking[i][match.index] = 0
+          startingPoint = [i, match.index]
+        }
+      })
+
+      startingPoint[0] > 0
+        && '7|F'.includes(data[startingPoint[0] - 1][startingPoint[1]])
+        && checkTile([startingPoint[0] - 1, startingPoint[1]], 0)
+      'J-7'.includes(data[startingPoint[0]][startingPoint[1] + 1])
+        && checkTile([startingPoint[0], startingPoint[1] + 1], 0)
+      'J|L'.includes(data[startingPoint[0] + 1][startingPoint[1]])
+        && checkTile([startingPoint[0] + 1, startingPoint[1]], 0)
+      'L-F'.includes(data[startingPoint[0]][startingPoint[1] - 1])
+        && checkTile([startingPoint[0], startingPoint[1] - 1], 0)
+
+      tracking.forEach(line => {
+        let maxValue = Math.max(...line.filter(item => item !== null))
+        maxValue > sum && (sum = maxValue)
+      })
+
+      console.log('Time for solution one is ' + (performance.now() - t1).toFixed(2) + ' ms')
+      console.log('Solution for part one is ' + sum + '!')
+    }
+    partOne()
+
+    function partTwo() {
+      let t1 = performance.now(),
+        sum = 0,
+        startingPoint = [],
+        tracking = new Array(data.length)
+
+      const checkTile = (position) => {
+        let stack = [position]
+
+        while (stack.length > 0) {
+          let [x, y] = stack.pop()
+
+          if (
+            tracking[x][y] == 1
+            || '.S'.includes(data[x][y])) {
+            continue
+          }
+
+          tracking[x][y] = 1
+
+          switch (data[x][y]) {
+            case 'F':
+              stack.push([x + 1, y], [x, y + 1]);
+              break
+            case 'L':
+              stack.push([x - 1, y], [x, y + 1]);
+              break
+            case 'J':
+              stack.push([x - 1, y], [x, y - 1]);
+              break
+            case '7':
+              stack.push([x + 1, y], [x, y - 1]);
+              break
+            case '|':
+              stack.push([x - 1, y], [x + 1, y]);
+              break
+            case '-':
+              stack.push([x, y + 1], [x, y - 1]);
+              break
+            default:
+              break
+          }
+        }
+      }
+
+      data.forEach((item, i) => {
+        let match = item.match('S')
+
+        tracking[i] = new Array(item.length)
+
+        if (match) {
+          tracking[i][match.index] = 1
+          startingPoint = [i, match.index]
+        }
+      })
+
+      startingPoint[0] > 0
+        && '7|F'.includes(data[startingPoint[0] - 1][startingPoint[1]])
+        && checkTile([startingPoint[0] - 1, startingPoint[1]])
+      'J-7'.includes(data[startingPoint[0]][startingPoint[1] + 1])
+        && checkTile([startingPoint[0], startingPoint[1] + 1])
+      'J|L'.includes(data[startingPoint[0] + 1][startingPoint[1]])
+        && checkTile([startingPoint[0] + 1, startingPoint[1]])
+      'L-F'.includes(data[startingPoint[0]][startingPoint[1] - 1])
+        && checkTile([startingPoint[0], startingPoint[1] - 1])
+
+      console.log(data)
+      console.log(tracking)
+
+      for (let i = 0; i < tracking.length; i++) {
+        for (let j = 0; j < tracking[i].length; j++) {
+          if (tracking[i][j] == null) {
+            data[i] = data[i].substring(0, j) + ' ' + data[i].substring(j + 1)
+          }
+        }
+      }
+
+      console.log('Time for solution two is ' + (performance.now() - t1).toFixed(2) + ' ms')
+      console.log('Solution for part two is ' + sum + '!')
+    }
+    partTwo()
+  </script>
+</body>
+
+</html>
