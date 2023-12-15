@@ -1427,51 +1427,46 @@
 ##...##</pre>
 
   <script>
-    const data = document.querySelector('pre').innerText.split('\n\n'),
-      parsedInput = data.map(val => val.split('\n'))
+    const parsedInput = document.querySelector('pre').innerText.split('\n\n').map(val => val.split('\n'))
+
+    function checkImage(imageArray, { checkRow = true, noError = true }) {
+      let score = 0
+      const arrayLength = checkRow ? imageArray.length : imageArray[0].length,
+        arrayItemsLength = checkRow ? imageArray[0].length : imageArray.length
+
+      topLoop: for (let i = 0; i < arrayLength - 1; i++) {
+        let changed = noError
+
+        for (
+          let lowIndex = i, highIndex = i + 1;
+          lowIndex >= 0 && highIndex < arrayLength;
+          lowIndex--, highIndex++
+        ) {
+          for (let row = 0; row < arrayItemsLength; row++) {
+            const line = checkRow ? imageArray[lowIndex][row] : imageArray[row][lowIndex],
+              mirror = checkRow ? imageArray[highIndex][row] : imageArray[row][highIndex]
+
+            if (line !== mirror) {
+              if (changed) continue topLoop
+              changed = true
+            }
+          }
+        }
+
+        changed && (score += i + 1)
+      }
+
+      return score
+    }
 
     function partOne(input) {
       let t1 = performance.now(),
-        sum = 0,
-        columnScore = 0,
-        rowScore = 0
+        sum = 0
 
-      imageLoop: for (let imageNumber = 0; imageNumber < input.length; imageNumber++) {
-        const rowsLength = input[imageNumber].length,
-          columnsLength = input[imageNumber][0].length
-
-        lineLoop: for (let imageLine = 0; imageLine < rowsLength - 1; imageLine++) {
-          mirrorLoop: for (
-            let lowIndex = imageLine, highIndex = imageLine + 1;
-            lowIndex >= 0 && highIndex < rowsLength;
-            lowIndex--, highIndex++
-          ) {
-            if (input[imageNumber][lowIndex] !== input[imageNumber][highIndex]) {
-              continue lineLoop
-            }
-          }
-
-          rowScore += imageLine + 1
-        }
-
-        columnLoop: for (let imageColumn = 0; imageColumn < columnsLength - 1; imageColumn++) {
-          mirrorLoop: for (
-            let lowIndex = imageColumn, highIndex = imageColumn + 1;
-            lowIndex >= 0 && highIndex < columnsLength;
-            lowIndex--, highIndex++
-          ) {
-            for (let row = 0; row < rowsLength; row++) {
-              if (input[imageNumber][row][lowIndex] !== input[imageNumber][row][highIndex]) {
-                continue columnLoop
-              }
-            }
-          }
-
-          columnScore += imageColumn + 1
-        }
+      for (let imageNumber = 0; imageNumber < input.length; imageNumber++) {
+        sum += checkImage(input[imageNumber], { checkRow: true }) * 100
+        sum += checkImage(input[imageNumber], { checkRow: false })
       }
-
-      sum = rowScore * 100 + columnScore
 
       console.log('Time for solution one is ' + (performance.now() - t1).toFixed(2) + ' ms')
       console.log('Solution for part one is ' + sum + '!')
@@ -1480,58 +1475,12 @@
 
     function partTwo(input) {
       let t1 = performance.now(),
-        sum = 0,
-        columnScore = 0,
-        rowScore = 0
+        sum = 0
 
-      imageLoop: for (let imageNumber = 0; imageNumber < input.length; imageNumber++) {
-        const rowsLength = input[imageNumber].length,
-          columnsLength = input[imageNumber][0].length
-
-        lineLoop: for (let imageLine = 0; imageLine < rowsLength - 1; imageLine++) {
-          let changed = false
-
-          mirrorLoop: for (
-            let lowIndex = imageLine, highIndex = imageLine + 1;
-            lowIndex >= 0 && highIndex < rowsLength;
-            lowIndex--, highIndex++
-          ) {
-            for (let row = 0; row < columnsLength; row++) {
-              if (changed && input[imageNumber][lowIndex][row] !== input[imageNumber][highIndex][row]) {
-                continue lineLoop
-              }
-              if (input[imageNumber][lowIndex][row] !== input[imageNumber][highIndex][row]) {
-                changed = true
-              }
-            }
-          }
-
-          changed && (rowScore += imageLine + 1)
-        }
-
-        columnLoop: for (let imageColumn = 0; imageColumn < columnsLength - 1; imageColumn++) {
-          let changed = false
-
-          mirrorLoop: for (
-            let lowIndex = imageColumn, highIndex = imageColumn + 1;
-            lowIndex >= 0 && highIndex < columnsLength;
-            lowIndex--, highIndex++
-          ) {
-            for (let row = 0; row < rowsLength; row++) {
-              if (changed && input[imageNumber][row][lowIndex] !== input[imageNumber][row][highIndex]) {
-                continue columnLoop
-              }
-              if (input[imageNumber][row][lowIndex] !== input[imageNumber][row][highIndex]) {
-                changed = true
-              }
-            }
-          }
-
-          changed && (columnScore += imageColumn + 1)
-        }
+      for (let imageNumber = 0; imageNumber < input.length; imageNumber++) {
+        sum += checkImage(input[imageNumber], { checkRow: true, noError: false }) * 100
+        sum += checkImage(input[imageNumber], { checkRow: false, noError: false })
       }
-
-      sum = rowScore * 100 + columnScore
 
       console.log('Time for solution two is ' + (performance.now() - t1).toFixed(2) + ' ms')
       console.log('Solution for part two is ' + sum + '!')
