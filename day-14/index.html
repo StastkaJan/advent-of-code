@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+
+  <title>Day 14 - Advent of code</title>
+</head>
+
+<body>
+  <pre style="word-wrap: break-word; white-space: pre-wrap;">O....#....
+O.OO#....#
+.....##...
+OO.#O....O
+.O.....O#.
+O.#..O.#.#
+..O..#O..O
+.......O..
+#....###..
+#OO..#....</pre>
+
+  <script>
+    const data = document.querySelector('pre').innerText.split('\n'),
+      size = [data.length, data[0].length]
+
+    const mapRocks = (mapArray) => {
+      const nulls = new Map(),
+        hashes = [new Map(), new Map()]
+
+      for (let row = 0; row < mapArray.length; row++) {
+        hashes[0].get(row) || hashes[0].set(row, [])
+        for (let col = 0; col < mapArray[row].length; col++) {
+          nulls.get(col) || nulls.set(col, [])
+          hashes[1].get(col) || hashes[1].set(col, [])
+
+          switch (mapArray[row][col]) {
+            case 'O':
+              nulls.get(col).push(row)
+              break;
+            case '#':
+              hashes[0].get(row).push(col)
+              hashes[1].get(col).push(row)
+              break;
+
+            default:
+              break;
+          }
+        }
+      }
+
+      return [nulls, hashes]
+    }
+
+    const [nulls, hashes] = mapRocks(data)
+
+    const moveNulls = (size, nulls, hashes, iteration) => {
+      const map = new Map()
+
+      for (let i = 0; i < size[1]; i++) {
+        const lineHashes = hashes.get(i),
+          lineNulls = nulls.get(i)
+
+        for (let hash = 0; hash <= lineHashes?.length; hash++) {
+          const subArray = lineNulls?.filter(val => val >= (lineHashes[hash - 1] || 0) && val < (lineHashes[hash] >= 0 ? lineHashes[hash] : size[0]))
+          const minmaxValue = (lineHashes[hash - 1] ? lineHashes[hash - 1] + 1 : 0)
+          for (let j = minmaxValue; j < minmaxValue + subArray?.length; j++) {
+            map.get(j) || map.set(j, [])
+            map.get(j).push(i)
+          }
+        }
+      }
+
+      console.log(map)
+      return map
+    }
+
+    const partOne = (size, nulls, hashes) => {
+      let t1 = performance.now(),
+        sum = 0
+
+      for (let col = 0; col < size[1]; col++) {
+        const colHashes = hashes[1].get(col),
+          colNulls = nulls.get(col)
+
+        for (let i = 0; i <= colHashes.length; i++) {
+          let nulls = colNulls.filter(val => val >= (colHashes[i - 1] || 0) && val < (colHashes[i] >= 0 ? colHashes[i] : size[0]))
+          for (let j = (colHashes[i - 1] ? colHashes[i - 1] + 1 : 0); j < (colHashes[i - 1] ? colHashes[i - 1] + 1 : 0) + nulls.length; j++) {
+            sum += size[1] - j
+          }
+        }
+      }
+
+      console.log('Time for solution one is ' + (performance.now() - t1).toFixed(2) + ' ms')
+      console.log('Solution for part one is ' + sum + '!')
+    }
+    partOne(size, new Map(nulls), hashes)
+
+    const partTwo = (size, nulls, hashes) => {
+      let t1 = performance.now(),
+        sum = 0
+
+      for (let i = 0; i < 2; i++) {
+        nulls = moveNulls(size, nulls, hashes[1], i)
+        nulls = moveNulls(size.reverse(), nulls, hashes[0], i)
+      }
+
+      console.log('Time for solution two is ' + (performance.now() - t1).toFixed(2) + ' ms')
+      console.log('Solution for part two is ' + sum + '!')
+    }
+    partTwo(size, new Map(nulls), hashes)
+  </script>
+</body>
+
+</html>
