@@ -268,7 +268,58 @@
 
     const partTwo = (input) => {
       const t1 = performance.now()
+      const beamsStarts = []
       let sum = 0
+
+      for (let i = 0; i < input.length; i++) {
+        beamsStarts.push({ x: 0, y: i, dir: 'r', start: { x: 0, y: i }, end: false })
+
+        for (let j = 0; j < input[0].length; j++) {
+          (i === 0) && beamsStarts.push({ x: j, y: i, dir: 'b', start: { x: j, y: i }, end: false });
+          (i === input.length - 1) && beamsStarts.push({ x: j, y: i, dir: 't', start: { x: j, y: i }, end: false })
+        }
+
+        beamsStarts.push({ x: input.length - 1, y: i, dir: 'l', start: { x: input.length - 1, y: i }, end: false })
+      }
+
+      for (let i = 0; i < beamsStarts.length; i++) {
+        let energizedCells = Array.from(new Array(input.length), () => Array.from(new Array(input[0].length), () => ' '))
+        let stack = [beamsStarts[i]]
+        let count = 0
+
+        for (let j = 0; j < stack.length; j++) {
+          while (!stack[j].end) {
+            if (
+              stack.find(val => (
+                val.end === true
+                && stack[j].start.x === val.start.x
+                && stack[j].start.y === val.start.y
+                && stack[j].dir === val.dir))
+              || stack[j].x < 0
+              || stack[j].y < 0
+              || stack[j].x >= input[0].length
+              || stack[j].y >= input.length
+            ) {
+              stack[j].end = true
+              break
+            }
+
+            let newBeams = [];
+
+            [stack[j], energizedCells, newBeams] = handleMove(input, stack[j], energizedCells, stack)
+
+            newBeams?.map((beam) => stack.push(beam))
+          }
+        }
+
+        for (let j = 0; j < energizedCells.length; j++) {
+          for (let k = 0; k < energizedCells[j].length; k++) {
+            energizedCells[j][k] === '1' && count++
+          }
+        }
+
+        count > sum && (sum = count)
+      }
 
       console.log('Time for solution two is ' + (performance.now() - t1).toFixed(2) + ' ms')
       console.log('Solution for part two is ' + sum + '!')
