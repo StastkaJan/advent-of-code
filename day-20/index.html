@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+
+  <title>Day 20 - Advent of code</title>
+</head>
+
+<body>
+  <pre style="word-wrap: break-word; white-space: pre-wrap;">%zl -&gt; zp, cl
+%vp -&gt; dj, vr
+%cc -&gt; xp
+&amp;dj -&gt; lq, mb, dc, ns, gz
+%md -&gt; ts, zp
+%fc -&gt; zp
+%px -&gt; zx
+&amp;nx -&gt; gl, br, pr, xf, vd, gj, kd
+%tf -&gt; lt, dj
+%fj -&gt; pc
+%mb -&gt; xx
+%cl -&gt; mj
+%pm -&gt; fj
+%dc -&gt; dj, vp
+%jc -&gt; bz, xm
+&amp;vd -&gt; zh
+%pz -&gt; sr, nx
+&amp;ns -&gt; zh
+%sr -&gt; nx
+%gl -&gt; pr
+%xx -&gt; nt, dj
+%gp -&gt; md
+%hb -&gt; jl, nx
+&amp;zh -&gt; rx
+%rb -&gt; gz, dj
+%xm -&gt; bz
+&amp;zp -&gt; px, gp, cl, bh, fn, ls, hs
+&amp;bz -&gt; pm, pc, bv, dl, jp, fj, cc
+%nl -&gt; bz, pm
+&amp;bh -&gt; zh
+%hq -&gt; gj, nx
+%bv -&gt; bz, nl
+%bj -&gt; jp, bz
+%gj -&gt; mx
+%xp -&gt; bz, bj
+%vr -&gt; dj, mb
+&amp;dl -&gt; zh
+%pr -&gt; hb
+%nt -&gt; dj, lq
+%mx -&gt; gl, nx
+%kd -&gt; hq
+%fn -&gt; px
+%jp -&gt; xc
+%zx -&gt; zl, zp
+%br -&gt; nx, xf
+%lt -&gt; dj
+%df -&gt; dj, tf
+%ts -&gt; zp, fc
+%jl -&gt; nx, pz
+%xc -&gt; jc, bz
+%xf -&gt; kd
+%lq -&gt; rb
+%gz -&gt; df
+%pc -&gt; cc
+%hs -&gt; fn
+broadcaster -&gt; ls, bv, dc, br
+%mj -&gt; zp, gp
+%ls -&gt; hs, zp</pre>
+
+  <script>
+    const parseInput = () => {
+      return document.querySelector('pre').innerText.split('\n')
+    }
+
+    const parseData = (data) => {
+      const regexp = new RegExp(/%|&/)
+      const object = {}
+
+      for (let i = 0; i < data.length; i++) {
+        const [name, output] = data[i].split(' -> ')
+        const subObject = { name: name.replace(regexp, ''), type: name[0], output: output.split(', ') }
+
+        if (name[0] === '%') {
+          subObject.turnedOn = false
+        } else if (name[0] === '&') {
+          subObject.inputs = {}
+        }
+
+        object[subObject.name] = subObject
+      }
+
+      const objectArray = Object.keys(object)
+
+      for (let i = 0; i < objectArray.length - 1; i++) {
+        const objectOutput = object[objectArray[i]].output
+
+        for (let j = 0; j < objectOutput.length; j++) {
+          if (object[objectOutput[j]]?.type === '&') {
+            object[objectOutput[j]].inputs[objectArray[i]] = 0
+          }
+        }
+      }
+
+      return object
+    }
+
+    const data = parseData(parseInput())
+
+    const sendSignal = (graphObject, requiredModules, count) => {
+      const queue = []
+      const signals = [1, 0]
+
+      for (const output of graphObject.broadcaster.output) {
+        queue.push([graphObject[output], 0])
+      }
+
+      for (let i = 0; queue.length > 0; i++) {
+        const [object, pulse] = queue.shift()
+        const outputs = object?.output
+
+        signals[pulse]++
+
+        if (object?.type === '%') {
+          if (pulse === 1) continue
+
+          object.turnedOn = !object.turnedOn
+
+          for (let i = 0; i < outputs?.length; i++) {
+            const newObject = graphObject[outputs[i]]
+            const newSignal = object.turnedOn ? 1 : 0
+
+            if (newObject.type === '&') {
+              newObject.inputs[object.name] = newSignal
+            }
+
+            queue.push([newObject, newSignal])
+          }
+        } else {
+          for (let j = 0; j < outputs?.length; j++) {
+            const newObject = graphObject[outputs[j]]
+            const newSignal = Object.values(object.inputs).every(Boolean) ? 0 : 1
+
+            if (newObject?.type === '&') {
+              newObject.inputs[object.name] = newSignal
+            }
+
+            if (newSignal === 1 && requiredModules?.includes(object.name)) {
+              requiredModules[requiredModules.indexOf(object.name)] = count
+            }
+
+            queue.push([newObject, newSignal])
+          }
+        }
+      }
+
+      return [graphObject, signals, requiredModules]
+    }
+
+    const partOne = (input) => {
+      const t1 = performance.now()
+      let sum = 0
+
+      let resultInput = JSON.parse(JSON.stringify(input))
+      let signals = [0, 0]
+      let count = 0
+
+      do {
+        const result = sendSignal(resultInput)
+
+        resultInput = result[0]
+        signals[0] += result[1][0]
+        signals[1] += result[1][1]
+        count++
+      } while (count < 1000 && JSON.stringify(resultInput) !== JSON.stringify(input));
+
+      sum = signals.reduce((prev, curr) => prev * curr * (1000 / count) ** 2)
+
+      console.log('Time for solution one is ' + (performance.now() - t1).toFixed(2) + ' ms')
+      console.log('Solution for part one is ' + sum + '!')
+    }
+    partOne(data)
+
+    const gcd = (a, b) => (b == 0) ? a : gcd(b, a % b)
+
+    const lcm = (a, b) => (a * b) / gcd(a, b)
+
+    const partTwo = (input) => {
+      const t1 = performance.now()
+      let sum = 0
+
+      let resultInput = JSON.parse(JSON.stringify(input))
+      let count = 1
+      let arr = []
+
+      let requiredModules = Object.keys(resultInput).filter(module =>
+        resultInput[module].output.includes(Object.keys(resultInput).find(module =>
+          resultInput[module].output.includes('rx')
+        ))
+      )
+
+      do {
+        const result = sendSignal(resultInput, requiredModules, count)
+
+        resultInput = result[0]
+        requiredModules = result[2]
+
+        if (requiredModules.every(Number)) break
+
+        count++
+      } while (count < 5_000);
+
+      sum = requiredModules.reduce((prev, curr) => lcm(prev, curr))
+
+      console.log('Time for solution two is ' + (performance.now() - t1).toFixed(2) + ' ms')
+      console.log('Solution for part two is ' + sum + '!')
+    }
+    partTwo(data)
+  </script>
+</body>
+
+</html>
