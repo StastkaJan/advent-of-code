@@ -244,11 +244,19 @@
               }
 
               stack.push(obj)
-              map.has(obj.from[0] + ':' + obj.from[1]) ? map.get(obj.from[0] + ':' + obj.from[1]).push(obj) : map.set(obj.from[0] + ':' + obj.from[1], [obj])
+              map.has(obj.from[0] + ':' + obj.from[1])
+                ? map.get(obj.from[0] + ':' + obj.from[1]).push(obj)
+                : map.set(obj.from[0] + ':' + obj.from[1], [obj])
             }
           }
         }
       }
+
+      map.forEach((val, key) => {
+        if (val.length === 3) {
+          val.pop()
+        }
+      })
 
       return map
     }
@@ -263,7 +271,7 @@
       let count = 0
       let maxValue = 0
 
-      while (stack.length > iter && count < 1_000) {
+      while (stack.length > iter && count < 10_000_000) {
         const key = stack[iter].end[0] + ':' + stack[iter].end[1]
         const mapItem = paths.get(key)
         const steps = stack[iter].steps
@@ -306,8 +314,6 @@
 
         count++
       }
-
-      console.log(stack)
 
       return maxValue
     }
