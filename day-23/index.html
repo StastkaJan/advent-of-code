@@ -174,67 +174,150 @@
       return returnArray
     }
 
-    const move = (grid, noSlope = false) => {
+    const parsePaths = (grid, noSlope = false) => {
       const start = [0, 1]
       const end = [grid.length - 1, grid[0].length - 2]
-      const steps = [{ position: start, steps: 0, steppedOnto: [] }]
+      const stack = [{ position: start, steps: 0, from: start, previous: [], ended: false }]
+      const map = new Map()
 
       let iter = 0
-      let count = 0
 
-      while (steps.length > iter && count < 1_000_000) {
-        const startingPosition = steps[iter].position
-        const row = steps[iter].position[0]
-        const col = steps[iter].position[1]
+      map.set(start[0] + ':' + start[1], [...stack])
+      map.set('end', end)
 
-        if (row === end[0] && col === end[1]) {
+      while (stack.length > iter) {
+        const startingPosition = stack[iter].position
+        const row = stack[iter].position[0]
+        const col = stack[iter].position[1]
+
+        if ((row === end[0] && col === end[1]) || (row === start[0] && col === start[1] && stack[iter].previous.length > 0)) {
+          stack[iter].ended = true
+        }
+
+        if (stack[iter].ended) {
           iter++
           continue
         }
 
         const moveResult = possibleStep([
-          row > 0 && !steps[iter].steppedOnto.find(val => val[0] === row - 1 && val[1] === col)
+          row > 0
+            && !(stack[iter].from[0] === row - 1 && stack[iter].from[1] === col)
+            && !(stack[iter].previous[0] === row - 1 && stack[iter].previous[1] === col)
             ? grid[row - 1][col] : '#',
-          col > 0 && !steps[iter].steppedOnto.find(val => val[0] === row && val[1] === col + 1)
+          col > 0
+            && !(stack[iter].from[0] === row && stack[iter].from[1] === col + 1)
+            && !(stack[iter].previous[0] === row && stack[iter].previous[1] === col + 1)
             ? grid[row][col + 1] : '#',
-          row < grid.length - 1 && !steps[iter].steppedOnto.find(val => val[0] === row + 1 && val[1] === col)
+          row < grid.length - 1
+            && !(stack[iter].from[0] === row + 1 && stack[iter].from[1] === col)
+            && !(stack[iter].previous[0] === row + 1 && stack[iter].previous[1] === col)
             ? grid[row + 1][col] : '#',
-          col < grid[0].length - 1 && !steps[iter].steppedOnto.find(val => val[0] === row && val[1] === col - 1)
+          col < grid[0].length - 1
+            && !(stack[iter].from[0] === row && stack[iter].from[1] === col - 1)
+            && !(stack[iter].previous[0] === row && stack[iter].previous[1] === col - 1)
             ? grid[row][col - 1] : '#'
         ], noSlope) // top, right, bottom, left
 
-        let addedTimes = 0
-        for (let i = 0; i < moveResult.length; i++) {
-          if (moveResult[i] !== 0) {
-            if (addedTimes === 0) {
-              steps[iter].steps++
-              steps[iter].steppedOnto.push(steps[iter].position)
-              steps[iter].position = [steps[iter].position[0] + moveResult[i][0], steps[iter].position[1] + moveResult[i][1]]
-            } else {
-              steps.push({
-                position: [startingPosition[0] + moveResult[i][0], startingPosition[1] + moveResult[i][1]],
-                steps: steps[iter].steps,
-                steppedOnto: JSON.parse(JSON.stringify(steps[iter].steppedOnto))
-              })
-            }
+        const filteredMove = moveResult.filter(val => val !== 0)
 
-            addedTimes++
+        for (let i = 0; i < filteredMove.length; i++) {
+          if (filteredMove.length < 2) {
+            stack[iter].steps++
+            stack[iter].previous = stack[iter].position
+            stack[iter].position = [stack[iter].position[0] + filteredMove[i][0], stack[iter].position[1] + filteredMove[i][1]]
+          } else {
+            stack[iter].ended = true
+
+            if (
+              !stack.find(val => val.from[0] === startingPosition[0]
+                && val.from[1] === startingPosition[1]
+                && val.direction[0] === filteredMove[i][0]
+                && val.direction[1] === filteredMove[i][1])
+            ) {
+              const obj = {
+                position: [startingPosition[0] + filteredMove[i][0], startingPosition[1] + filteredMove[i][1]],
+                steps: 1,
+                from: [startingPosition[0], startingPosition[1]],
+                previous: [startingPosition[0], startingPosition[1]],
+                ended: false,
+                direction: filteredMove[i]
+              }
+
+              stack.push(obj)
+              map.has(obj.from[0] + ':' + obj.from[1]) ? map.get(obj.from[0] + ':' + obj.from[1]).push(obj) : map.set(obj.from[0] + ':' + obj.from[1], [obj])
+            }
           }
+        }
+      }
+
+      return map
+    }
+
+    const countSteps = (paths) => {
+      const start = [0, 1]
+      const end = paths.get('end')
+      const first = paths.get(start[0] + ':' + start[1])[0]
+      const stack = [{ end: first.position, goneThrough: [first.position], steps: first.steps }]
+
+      let iter = 0
+      let count = 0
+      let maxValue = 0
+
+      while (stack.length > iter && count < 1_000) {
+        const key = stack[iter].end[0] + ':' + stack[iter].end[1]
+        const mapItem = paths.get(key)
+        const steps = stack[iter].steps
+        const tempArr = [...stack[iter].goneThrough]
+
+        let addedTimes = 0
+        let added = false
+
+        if (mapItem == null) {
+          stack[iter].steps > maxValue && (maxValue = stack[iter].steps)
+          iter++
+          continue
+        }
+
+        for (let i = 0; i < mapItem.length; i++) {
+          if (tempArr.find(val => val[0] === mapItem[i].position[0] && val[1] === mapItem[i].position[1])) continue
+          if (start[0] === mapItem[i].position[0] && start[1] === mapItem[i].position[1]) continue
+
+          added = true
+
+          if (addedTimes === 0) {
+            stack[iter].end = mapItem[i].position
+            stack[iter].steps += mapItem[i].steps
+            stack[iter].goneThrough.push(mapItem[i].position)
+          } else {
+            const obj = {
+              end: mapItem[i].position,
+              goneThrough: [...tempArr, mapItem[i].position],
+              steps: steps + mapItem[i].steps
+            }
+            stack.push(obj)
+          }
+
+          addedTimes++
+        }
+
+        if (!added) {
+          stack.splice(iter, 1)
         }
 
         count++
       }
 
-      console.log(steps)
+      console.log(stack)
 
-      return steps
+      return maxValue
     }
 
     const partOne = (data) => {
       const t1 = performance.now()
       let sum = 0
 
-      sum = Math.max(...move(data).map(val => val.steps))
+      const paths = parsePaths(data)
+      sum = countSteps(paths)
 
       console.log('Time for solution one is ' + (performance.now() - t1).toFixed(2) + ' ms')
       console.log('Solution for part one is ' + sum + '!')
@@ -244,6 +327,10 @@
     const partTwo = (data) => {
       const t1 = performance.now()
       let sum = 0
+
+      const paths = parsePaths(data, true)
+      // TODO complete solution for part two
+      sum = countSteps(paths)
 
       console.log('Time for solution two is ' + (performance.now() - t1).toFixed(2) + ' ms')
       console.log('Solution for part two is ' + sum + '!')
