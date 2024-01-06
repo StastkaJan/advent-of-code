@@ -313,8 +313,7 @@
 
   <script defer>
     const parseInput = (input) => {
-      const data = input.split('\n').map(val => val.split('@').map(val => val.split(', ').map(val => parseInt(val))))
-      return data
+      return input.split('\n').map(val => val.split('@').map(val => val.split(', ').map(val => parseInt(val))))
     }
     data = parseInput(document.querySelector('pre').innerText)
 
@@ -322,8 +321,8 @@
       for (let i = 0; i < data.length; i++) {
         const xyz = data[i][0]
         const dir = data[i][1]
-        const xyzp1 = [xyz[0] + dir[0], xyz[1] + dir[1], xyz[2] + dir[2]]
-        const k = (xyz[1] - xyzp1[1]) / (xyz[0] - xyzp1[0])
+        const xyp1 = [xyz[0] + dir[0], xyz[1] + dir[1]]
+        const k = (xyz[1] - xyp1[1]) / (xyz[0] - xyp1[0])
         const q = xyz[1] - k * xyz[0]
 
         data[i].push([k, q])
@@ -360,9 +359,94 @@
     }
     partOne(JSON.parse(JSON.stringify(data)))
 
+    const linearSolve = async (dataN, dataM, svx, svy, svz) => {
+      const x0 = dataN[0][0]
+      const y0 = dataN[0][1]
+      const z0 = dataN[0][2]
+      const x1 = dataM[0][0]
+      const y1 = dataM[0][1]
+      const mvx0 = svx - dataN[1][0]
+      const mvy0 = svy - dataN[1][1]
+      const mvz0 = svz - dataN[1][2]
+      const mvx1 = svx - dataM[1][0]
+      const mvy1 = svy - dataM[1][1]
+      const mvx1_mvy0 = mvx1 * mvy0
+      const mvx0_mvy1 = mvx0 * mvy1
+      const det = mvx1_mvy0 - mvx0_mvy1
+
+      if (det !== 0) {
+        return [(mvx1_mvy0 * x0 - mvx0_mvy1 * x1 + mvx0 * mvx1 * (-y0 + y1)) / det,
+        (mvy0 * mvy1 * (x0 - x1) - mvx0_mvy1 * y0 + mvx1_mvy0 * y1) / det,
+        (mvy1 * mvz0 * (x0 - x1) + mvx1 * mvz0 * (-y0 + y1)) / det + z0,
+        (mvy0 * (-x0 + x1) + mvx0 * (y0 - y1)) / det]
+      }
+
+      return undefined
+    }
+
+    const ef = async (data, svx, svy, svz) => {
+      const nums1 = await linearSolve(data[0], data[1], svx, svy, svz)
+      const nums2 = await linearSolve(data[2], data[1], svx, svy, svz)
+
+      if (!nums1 || !nums2)
+        return undefined
+
+      return nums1.reduce((prev, curr) => prev + curr) - nums2.reduce((prev, curr) => prev + curr)
+    }
+
     const partTwo = async (data) => {
       const t1 = performance.now()
       let sum = 0
+
+      let xm = 0, ym = 0, zm = 0
+      let minimumfound = Infinity
+
+      for (let r = 1; r < 300; r++) {
+        for (let x = -r; x <= r; x++) {
+          for (let y = -r; y <= r; y++) {
+            for (let z = -r; z <= r; z += 2 * r) {
+              const e = await ef(data, x, y, z)
+              const absValue = Math.abs(e)
+
+              if (!isNaN(e) && absValue < minimumfound) {
+                [xm, ym, zm, minimumfound] = [x, y, z, absValue]
+              }
+            }
+          }
+        }
+
+        for (let x = -r; x <= r; x++) {
+          for (let y = -r; y <= r; y += 2 * r) {
+            for (let z = -r; z <= r; z++) {
+              const e = await ef(data, x, y, z)
+              const absValue = Math.abs(e)
+
+              if (!isNaN(e) && absValue < minimumfound) {
+                [xm, ym, zm, minimumfound] = [x, y, z, absValue]
+              }
+            }
+          }
+        }
+
+        for (let x = -r; x <= r; x += 2 * r) {
+          for (let y = -r; y <= r; y++) {
+            for (let z = -r; z <= r; z++) {
+              const e = await ef(data, x, y, z)
+              const absValue = Math.abs(e)
+
+              if (!isNaN(e) && absValue < minimumfound) {
+                [xm, ym, zm, minimumfound] = [x, y, z, absValue]
+              }
+            }
+          }
+        }
+
+        if (minimumfound < 1)
+          break
+      }
+
+      const nums = await linearSolve(data[0], data[1], xm, ym, zm)
+      sum = nums[0] + nums[1] + nums[2]
 
       console.log('Time for solution two is ' + (performance.now() - t1).toFixed(2) + ' ms')
       console.log('Solution for part two is ' + sum + '!')
